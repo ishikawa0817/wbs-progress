@@ -2,11 +2,11 @@
   "delCnt": 2,
   "deliveries": [
     {
-      "date": "2026-04-27",
+      "date": "2026-04-26",
       "id": "del_1",
-      "note": "",
+      "note": "目標①20240425_環境構築と簡単なテストを実施.pdf",
       "taskId": "t1_2",
-      "title": "aaaaa"
+      "title": "環境構築、テスト1本作成"
     }
   ],
   "tasks": [
@@ -29,14 +29,14 @@
       "type": "task"
     },
     {
-      "aE": "",
-      "aS": "",
+      "aE": "2026-04-26",
+      "aS": "2026-04-25",
       "color": "#3b82f6",
       "end": "2026-06-17",
       "goal": 1,
       "id": "t1_2",
       "name": "02. 環境構築（Playwright）",
-      "progress": 0,
+      "progress": 100,
       "start": "2026-06-01",
       "type": "task"
     },
