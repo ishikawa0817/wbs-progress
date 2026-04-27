@@ -868,7 +868,6 @@ function openDM(taskId,delId){
     document.getElementById('dTi').value=d.title;
     document.getElementById('dDt').value=d.date;
     document.getElementById('dNt').value=d.note||'';
-
   } else {
     ['dTi','dNt'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('dDt').value='';
@@ -933,11 +932,16 @@ function hideTT(){ document.getElementById('tt').classList.remove('on'); }
 // ════════════════════════════════════
 // SERVER SYNC
 // ════════════════════════════════════
-var GH_TOKEN = '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';
+// ════════════════════════════════════
+// GITHUB ACTIONS SYNC
+// ════════════════════════════════════
 var GH_OWNER = 'ishikawa0817';
 var GH_REPO  = 'wbs-progress';
-var GH_FILE  = 'wbs_data.json';
-var GH_API   = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + GH_FILE;
+// データ読み込み用（公開リポジトリなのでトークン不要）
+var GH_RAW   = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/wbs_data.json';
+// Actions起動用トークン（Fine-grained: Actions=Read/Write のみ）
+var GH_TOKEN = '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';
+var GH_DISPATCH = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/dispatches';
 
 function setStatus(msg, cls){
   var el = document.getElementById('serverStatus');
@@ -951,39 +955,31 @@ function saveToServer(){
   btn.disabled = true;
   btn.textContent = '保存中...';
   var data = {tasks: tasks, deliveries: deliveries, delCnt: delCnt};
-  var content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-  // まず現在のSHAを取得（上書きに必要）
-  fetch(GH_API, {
+  var now = new Date();
+  var timestamp = now.toLocaleString('ja-JP');
+
+  fetch(GH_DISPATCH, {
+    method: 'POST',
     headers: {
       'Authorization': 'token ' + GH_TOKEN,
-      'Accept': 'application/vnd.github.v3+json'
-    }
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      event_type: 'save-wbs-data',
+      client_payload: {
+        data: data,
+        timestamp: timestamp
+      }
+    })
   })
-  .then(function(r){ return r.json(); })
-  .then(function(res){
-    var sha = res.sha || null;
-    var body = { message: '進捗更新 ' + new Date().toLocaleString('ja-JP'), content: content };
-    if(sha) body.sha = sha;
-    return fetch(GH_API, {
-      method: 'PUT',
-      headers: {
-        'Authorization': 'token ' + GH_TOKEN,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(res){
-    if(res.content){
-      var now = new Date();
+  .then(function(r){
+    if(r.status === 204){
       var hm = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
       setStatus('✅ ' + hm + ' 保存済み', 'ok');
-      saveLS();
+      saveLS(); // localStorageにもバックアップ
     } else {
-      console.error('GitHub save error:', res);
-      setStatus('❌ 保存失敗', 'err');
+      return r.text().then(function(t){ throw new Error(t); });
     }
     btn.disabled = false;
     btn.textContent = '💾 保存';
@@ -997,31 +993,24 @@ function saveToServer(){
 }
 
 function loadFromServer(){
-  return fetch(GH_API + '?ref=main&t=' + Date.now(), {
-    headers: {
-      'Authorization': 'token ' + GH_TOKEN,
-      'Accept': 'application/vnd.github.v3+json'
-    }
-  })
-  .then(function(r){
-    if(!r.ok) throw new Error('not found');
-    return r.json();
-  })
-  .then(function(res){
-    if(!res.content) return false;
-    var json = decodeURIComponent(escape(atob(res.content)));
-    var data = JSON.parse(json);
-    if(!data || !data.tasks) return false;
-    tasks = data.tasks;
-    deliveries = data.deliveries || [];
-    delCnt = data.delCnt || 1;
-    setStatus('🟢 最新データ読込済み', 'ok');
-    return true;
-  })
-  .catch(function(){
-    setStatus('⚪ ローカルデータを表示中', '');
-    return false;
-  });
+  // キャッシュを避けるためタイムスタンプを付与
+  return fetch(GH_RAW + '?t=' + Date.now())
+    .then(function(r){
+      if(!r.ok) throw new Error('not found');
+      return r.json();
+    })
+    .then(function(data){
+      if(!data || !data.tasks) return false;
+      tasks = data.tasks;
+      deliveries = data.deliveries || [];
+      delCnt = data.delCnt || 1;
+      setStatus('🟢 最新データ読込済み', 'ok');
+      return true;
+    })
+    .catch(function(){
+      setStatus('⚪ ローカルデータを表示中', '');
+      return false;
+    });
 }
 
 // ════════════════════════════════════
