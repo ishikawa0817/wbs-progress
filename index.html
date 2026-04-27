@@ -864,7 +864,7 @@ function saveTask(){
   t.aE=document.getElementById('eAE').value;
   t.progress=parseInt(document.getElementById('ePr').value)||0;
   document.getElementById('tOv').classList.remove('on'); editTId=null;
-  render(); saveToServer();
+  render();
 }
 
 // ════════════════════════════════════
@@ -901,7 +901,7 @@ function saveDel(){
       note:document.getElementById('dNt').value});
   }
   document.getElementById('dOv').classList.remove('on');
-  render(); saveToServer();
+  render();
 }
 
 // ════════════════════════════════════
@@ -921,7 +921,7 @@ function closeFP(){ document.getElementById('fpop').classList.remove('on'); acti
 function editFlag(){ if(!activeFlagId) return; const d=deliveries.find(d=>d.id===activeFlagId); openDM(d.taskId,d.id); }
 function delFlag(){
   if(!activeFlagId) return;
-  if(confirm('削除しますか？')){ deliveries=deliveries.filter(d=>d.id!==activeFlagId); closeFP(); saveLS(); render(); saveToServer(); }
+  if(confirm('削除しますか？')){ deliveries=deliveries.filter(d=>d.id!==activeFlagId); closeFP(); render(); }
 }
 document.addEventListener('click',e=>{
   const pp=document.getElementById('fpop');
