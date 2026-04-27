@@ -38,6 +38,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--tp);
 .server-status{font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;white-space:nowrap}
 .server-status.ok{color:#10b981}
 .server-status.err{color:#ef4444}
+.server-status.waiting{color:#d97706;font-weight:600}
 
 /* ── FILTER BAR ── */
 .filter-bar{background:var(--surface);border-bottom:1px solid var(--border);
@@ -855,7 +856,7 @@ function saveTask(){
   t.aE=document.getElementById('eAE').value;
   t.progress=parseInt(document.getElementById('ePr').value)||0;
   document.getElementById('tOv').classList.remove('on'); editTId=null;
-  deferSave(); render();
+  saveLS(); render(); saveToServer();
 }
 
 // ════════════════════════════════════
@@ -892,7 +893,7 @@ function saveDel(){
       note:document.getElementById('dNt').value});
   }
   document.getElementById('dOv').classList.remove('on');
-  deferSave(); render();
+  saveLS(); render(); saveToServer();
 }
 
 // ════════════════════════════════════
@@ -912,7 +913,7 @@ function closeFP(){ document.getElementById('fpop').classList.remove('on'); acti
 function editFlag(){ if(!activeFlagId) return; const d=deliveries.find(d=>d.id===activeFlagId); openDM(d.taskId,d.id); }
 function delFlag(){
   if(!activeFlagId) return;
-  if(confirm('削除しますか？')){ deliveries=deliveries.filter(d=>d.id!==activeFlagId); closeFP(); deferSave(); render(); }
+  if(confirm('削除しますか？')){ deliveries=deliveries.filter(d=>d.id!==activeFlagId); closeFP(); saveLS(); render(); saveToServer(); }
 }
 document.addEventListener('click',e=>{
   const pp=document.getElementById('fpop');
@@ -975,14 +976,25 @@ function saveToServer(){
   })
   .then(function(r){
     if(r.status === 204){
-      var hm = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
-      setStatus('✅ ' + hm + ' 保存済み', 'ok');
       saveLS();
+      // Actionsの完了を待ってリロード
+      var countdown = 30;
+      setStatus('⏳ Actions保存中... ' + countdown + '秒後に自動更新', 'waiting');
+      btn.disabled = true;
+      btn.textContent = '保存中...';
+      var timer = setInterval(function(){
+        countdown--;
+        if(countdown > 0){
+          setStatus('⏳ Actions保存中... ' + countdown + '秒後に自動更新', 'waiting');
+        } else {
+          clearInterval(timer);
+          setStatus('🔄 最新データを読み込み中...', 'waiting');
+          location.reload();
+        }
+      }, 1000);
     } else {
       return r.json().then(function(e){ throw e; });
     }
-    btn.disabled = false;
-    btn.textContent = '💾 保存';
   })
   .catch(function(e){
     console.error('GitHub save error:', e);
@@ -994,7 +1006,10 @@ function saveToServer(){
 
 function loadFromServer(){
   // キャッシュを避けるためタイムスタンプを付与
-  return fetch(GH_RAW + '?t=' + Date.now())
+  return fetch(GH_RAW + '?t=' + Date.now(), {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+    })
     .then(function(r){
       if(!r.ok) throw new Error('not found');
       return r.json();
