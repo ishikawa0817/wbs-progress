@@ -807,9 +807,17 @@ function renderGantt_daily(vp, days, monthSpans, totalW, hdrH, rowH, planTop){
 // PROGRESS / LABELS
 // ════════════════════════════════════
 function updateProgress(){
+  // タスクの期間（日数）で重み付けして進捗を計算
+  function taskDays(t){
+    const s=new Date(t.start), e=new Date(t.end);
+    return Math.max(1, Math.round((e-s)/864e5)+1);
+  }
   [1,2,3].forEach(g=>{
     const gt=tasks.filter(t=>t.type==='task'&&t.goal===g);
-    const avg=gt.length?Math.round(gt.reduce((s,t)=>s+(t.progress||0),0)/gt.length):0;
+    if(!gt.length){ document.getElementById('p'+g).textContent='0%'; document.getElementById('b'+g).style.width='0%'; return; }
+    const totalDays=gt.reduce((s,t)=>s+taskDays(t),0);
+    const weighted=gt.reduce((s,t)=>s+(t.progress||0)*taskDays(t),0);
+    const avg=Math.round(weighted/totalDays);
     document.getElementById('p'+g).textContent=avg+'%';
     document.getElementById('b'+g).style.width=avg+'%';
   });
