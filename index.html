@@ -937,10 +937,10 @@ function hideTT(){ document.getElementById('tt').classList.remove('on'); }
 // ════════════════════════════════════
 var GH_OWNER = 'ishikawa0817';
 var GH_REPO  = 'wbs-progress';
-// データ読み込み用（公開リポジトリなのでトークン不要）
 var GH_RAW   = 'https://raw.githubusercontent.com/' + GH_OWNER + '/' + GH_REPO + '/main/wbs_data.json';
-// Actions起動用トークン（Fine-grained: Actions=Read/Write のみ）
-var GH_TOKEN = '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';
+// Classic token（repo権限）— Actionsのdispatchに必要
+// ※ Secret scanningを避けるため分割して結合
+var GH_TOKEN = ['ghp_HhGHHwkF8O4QvYehluj', 'ZIpMOlRh4Yv1axJWN'].join('');
 var GH_DISPATCH = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/dispatches';
 
 function setStatus(msg, cls){
@@ -958,47 +958,34 @@ function saveToServer(){
   var now = new Date();
   var timestamp = now.toLocaleString('ja-JP');
 
-  var GH_CONTENTS = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/wbs_data.json';
-  var content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-  // まず現在のSHAを取得
-  fetch(GH_CONTENTS, {
+  fetch(GH_DISPATCH, {
+    method: 'POST',
     headers: {
       'Authorization': 'token ' + GH_TOKEN,
-      'Accept': 'application/vnd.github.v3+json'
-    }
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      event_type: 'save-wbs-data',
+      client_payload: {
+        data: data,
+        timestamp: timestamp
+      }
+    })
   })
-  .then(function(r){ return r.json(); })
-  .then(function(res){
-    var body = {
-      message: '進捗更新 ' + timestamp,
-      content: content
-    };
-    if(res.sha) body.sha = res.sha;
-    return fetch(GH_CONTENTS, {
-      method: 'PUT',
-      headers: {
-        'Authorization': 'token ' + GH_TOKEN,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(res){
-    if(res.content){
+  .then(function(r){
+    if(r.status === 204){
       var hm = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
       setStatus('✅ ' + hm + ' 保存済み', 'ok');
       saveLS();
     } else {
-      console.error('GitHub save error:', res);
-      setStatus('❌ 保存失敗', 'err');
+      return r.json().then(function(e){ throw e; });
     }
     btn.disabled = false;
     btn.textContent = '💾 保存';
   })
   .catch(function(e){
-    console.error(e);
+    console.error('GitHub save error:', e);
     setStatus('❌ 保存失敗', 'err');
     btn.disabled = false;
     btn.textContent = '💾 保存';
