@@ -29,14 +29,14 @@
       "type": "task"
     },
     {
-      "aE": "2026-04-26",
+      "aE": "",
       "aS": "2026-04-25",
       "color": "#3b82f6",
       "end": "2026-06-17",
       "goal": 1,
       "id": "t1_2",
       "name": "02. 環境構築（Playwright）",
-      "progress": 50,
+      "progress": 100,
       "start": "2026-06-01",
       "type": "task"
     },
