@@ -219,6 +219,43 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--tp);
 .tt.on{display:block}
 .tt-t{font-weight:700;margin-bottom:2px}
 .tt-s{color:#9ca3af;font-size:11px;font-family:'JetBrains Mono',monospace}
+
+/* ── MOBILE LIST VIEW ── */
+.mobile-only { display: none; }
+.desktop-only { display: block; }
+
+@media (max-width: 900px) {
+  .mobile-only { display: block; }
+  .desktop-only { display: none; }
+
+  .topbar { padding: 8px 12px; gap: 6px; }
+  .tb-title { font-size: 13px; }
+  .badge { display: none; }
+  .filter-bar { display: none; }
+
+  .container { padding: 10px 12px; }
+  .prow { grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; }
+  .pc { padding: 10px 12px; }
+  .pc-v { font-size: 18px; }
+
+  /* リスト表示 */
+  .mobile-list { background: var(--surface); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
+  .mobile-phase { background: #fafbfc; border-bottom: 1px solid var(--border); padding: 10px 14px; display: flex; align-items: center; gap: 8px; }
+  .mobile-phase-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .mobile-phase-name { font-size: 13px; font-weight: 700; }
+  .mobile-task { border-bottom: 1px solid #f1f3f7; padding: 12px 14px 10px 22px; }
+  .mobile-task:last-child { border-bottom: none; }
+  .mobile-task-name { font-size: 12px; font-weight: 600; color: var(--tp); margin-bottom: 6px; }
+  .mobile-task-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
+  .mobile-task-date { font-size: 10px; color: var(--tm); font-family: 'JetBrains Mono', monospace; }
+  .mobile-task-prog { font-size: 10px; font-weight: 700; }
+  .mobile-prog-bar-wrap { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+  .mobile-prog-bar { height: 100%; border-radius: 3px; transition: width .3s; }
+  .mobile-actual { font-size: 10px; color: var(--tm); margin-bottom: 4px; }
+  .mobile-deliveries { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
+  .mobile-delivery { font-size: 10px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 3px 8px; color: #92400e; display: flex; align-items: center; gap: 4px; }
+  .mobile-edit-btn { margin-top: 6px; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); font-size: 11px; font-family: 'Noto Sans JP', sans-serif; cursor: pointer; color: var(--ts); }
+}
 </style>
 </head>
 <body>
@@ -261,12 +298,16 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--tp);
     <div style="flex:1"></div>
     <span style="font-size:10px;color:var(--tm)">✏️ バークリックで編集 ／ 🚩 で提出物追加</span>
   </div>
-  <div class="gw">
-    <div class="gs" id="gs">
-      <div class="gi" id="gi"></div>
+  <div class="desktop-only">
+    <div class="gw">
+      <div class="gs" id="gs">
+        <div class="gi" id="gi"></div>
+      </div>
     </div>
   </div>
-</div>
+
+  <!-- MOBILE LIST VIEW -->
+  <div class="mobile-list mobile-only" id="mobileList"></div>
 
 <!-- TASK MODAL -->
 <div class="overlay" id="tOv" onclick="closeTM(event)">
@@ -584,6 +625,7 @@ function render(){
 
   updateProgress();
   updateTodayLbl();
+  if(isMobile()) renderMobile();
 }
 
 // ── shared left panel builder ──
@@ -1033,6 +1075,70 @@ function loadFromServer(){
     });
 }
 
+
+// ════════════════════════════════════
+// MOBILE LIST RENDER
+// ════════════════════════════════════
+function isMobile(){ return window.innerWidth <= 900; }
+
+function renderMobile(){
+  var el = document.getElementById('mobileList');
+  if(!el) return;
+  el.innerHTML = '';
+
+  tasks.forEach(function(t){
+    if(t.type === 'phase'){
+      var ph = mk('div','mobile-phase');
+      var dot = mk('div','mobile-phase-dot'); dot.style.background = t.color;
+      var nm = mk('div','mobile-phase-name'); nm.textContent = t.name;
+      ph.appendChild(dot); ph.appendChild(nm);
+      el.appendChild(ph);
+    } else {
+      var row = mk('div','mobile-task');
+
+      // タスク名
+      var tn = mk('div','mobile-task-name'); tn.textContent = t.name; row.appendChild(tn);
+
+      // 日付・進捗
+      var meta = mk('div','mobile-task-meta');
+      var dt = mk('div','mobile-task-date'); dt.textContent = fmt(t.start) + ' 〜 ' + fmt(t.end); meta.appendChild(dt);
+      var pr = mk('div','mobile-task-prog'); pr.style.color = t.color; pr.textContent = (t.progress||0) + '%'; meta.appendChild(pr);
+      row.appendChild(meta);
+
+      // プログレスバー
+      var bw = mk('div','mobile-prog-bar-wrap');
+      var bf = mk('div','mobile-prog-bar'); bf.style.background = t.color; bf.style.width = (t.progress||0) + '%';
+      bw.appendChild(bf); row.appendChild(bw);
+
+      // 実績
+      if(t.aS){
+        var ac = mk('div','mobile-actual');
+        ac.textContent = '実績: ' + fmt(t.aS) + (t.aE ? ' 〜 ' + fmt(t.aE) : ' 〜 着手中');
+        row.appendChild(ac);
+      }
+
+      // 提出物
+      var dels = deliveries.filter(function(d){ return d.taskId === t.id; });
+      if(dels.length){
+        var dw = mk('div','mobile-deliveries');
+        dels.forEach(function(d){
+          var di = mk('div','mobile-delivery');
+          di.textContent = '🚩 ' + d.title + '  ' + fmt(d.date);
+          if(d.note){ di.title = d.note; }
+          dw.appendChild(di);
+        });
+        row.appendChild(dw);
+      }
+
+      // 編集ボタン
+      var eb = mk('button','mobile-edit-btn'); eb.textContent = '✏️ 編集';
+      eb.onclick = function(){ openTM(t.id); };
+      row.appendChild(eb);
+
+      el.appendChild(row);
+    }
+  });
+}
 // ════════════════════════════════════
 // INIT
 // ════════════════════════════════════
@@ -1050,7 +1156,7 @@ loadFromServer().then(function(loaded){
 let _resizeTimer=null;
 window.addEventListener('resize',function(){
   clearTimeout(_resizeTimer);
-  _resizeTimer=setTimeout(render,150);
+  _resizeTimer=setTimeout(function(){ render(); if(isMobile()) renderMobile(); },150);
 });
 </script>
 </body>
