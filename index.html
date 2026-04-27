@@ -958,28 +958,41 @@ function saveToServer(){
   var now = new Date();
   var timestamp = now.toLocaleString('ja-JP');
 
-  fetch(GH_DISPATCH, {
-    method: 'POST',
+  var GH_CONTENTS = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/wbs_data.json';
+  var content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+  // まず現在のSHAを取得
+  fetch(GH_CONTENTS, {
     headers: {
       'Authorization': 'token ' + GH_TOKEN,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      event_type: 'save-wbs-data',
-      client_payload: {
-        data: data,
-        timestamp: timestamp
-      }
-    })
+      'Accept': 'application/vnd.github.v3+json'
+    }
   })
-  .then(function(r){
-    if(r.status === 204){
+  .then(function(r){ return r.json(); })
+  .then(function(res){
+    var body = {
+      message: '進捗更新 ' + timestamp,
+      content: content
+    };
+    if(res.sha) body.sha = res.sha;
+    return fetch(GH_CONTENTS, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + GH_TOKEN,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(res){
+    if(res.content){
       var hm = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
       setStatus('✅ ' + hm + ' 保存済み', 'ok');
-      saveLS(); // localStorageにもバックアップ
+      saveLS();
     } else {
-      return r.text().then(function(t){ throw new Error(t); });
+      console.error('GitHub save error:', res);
+      setStatus('❌ 保存失敗', 'err');
     }
     btn.disabled = false;
     btn.textContent = '💾 保存';
