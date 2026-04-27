@@ -1005,10 +1005,7 @@ function saveToServer(){
 
 function loadFromServer(){
   // キャッシュを避けるためタイムスタンプを付与
-  return fetch(GH_RAW + '?t=' + Date.now(), {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-    })
+  return fetch(GH_RAW + '?t=' + Date.now())
     .then(function(r){
       if(!r.ok) throw new Error('not found');
       return r.json();
