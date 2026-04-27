@@ -232,7 +232,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--tp);
   </div>
   <div class="tb-right">
     
-    <span class="server-status" id="serverStatus">⚪ 未接続</span>
+    <span class="server-status" id="serverStatus">⏳ 読み込み中...</span>
     <button class="ibtn save-server-btn" id="saveBtn" onclick="saveToServer()">💾 保存</button>
     <span class="today-lbl"><span class="tdot"></span><span id="todayLbl"></span></span>
   </div>
@@ -856,7 +856,7 @@ function saveTask(){
   t.aE=document.getElementById('eAE').value;
   t.progress=parseInt(document.getElementById('ePr').value)||0;
   document.getElementById('tOv').classList.remove('on'); editTId=null;
-  saveLS(); render(); saveToServer();
+  render(); saveToServer();
 }
 
 // ════════════════════════════════════
@@ -893,7 +893,7 @@ function saveDel(){
       note:document.getElementById('dNt').value});
   }
   document.getElementById('dOv').classList.remove('on');
-  saveLS(); render(); saveToServer();
+  render(); saveToServer();
 }
 
 // ════════════════════════════════════
@@ -976,7 +976,6 @@ function saveToServer(){
   })
   .then(function(r){
     if(r.status === 204){
-      saveLS();
       // Actionsの完了を待ってリロード
       var countdown = 30;
       setStatus('⏳ Actions保存中... ' + countdown + '秒後に自動更新', 'waiting');
@@ -1023,7 +1022,7 @@ function loadFromServer(){
       return true;
     })
     .catch(function(){
-      setStatus('⚪ ローカルデータを表示中', '');
+      setStatus('❌ GitHubから読み込めませんでした', 'err');
       return false;
     });
 }
@@ -1031,9 +1030,9 @@ function loadFromServer(){
 // ════════════════════════════════════
 // INIT
 // ════════════════════════════════════
-// サーバーからロード → 失敗時はlocalStorage → それも無ければデフォルト
-loadFromServer().then(function(fromServer){
-  if(!fromServer && !loadLS()){
+// 常にGitHubのJSONから読み込む（localStorageは使わない）
+loadFromServer().then(function(loaded){
+  if(!loaded){
     tasks = JSON.parse(JSON.stringify(DEF_TASKS));
     deliveries = []; delCnt = 1;
   }
