@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WBS 進捗管理 2026</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{
+  --bg:#f5f6fa;--surface:#fff;--border:#e2e5ed;
+  --tp:#1a1d2e;--ts:#6b7280;--tm:#9ca3af;
+  --blue:#3b82f6;--g1:#3b82f6;--g2:#10b981;--g3:#8b5cf6;--red:#ef4444;
+  --lw:330px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--tp);min-height:100vh}
+
+/* ── TOP BAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,.06);gap:10px;flex-wrap:wrap}
+.tb-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tb-title{font-size:15px;font-weight:700}
+.tb-sub{font-size:10px;color:var(--tm);margin-top:1px}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.b1{background:#eff6ff;color:var(--g1)}.b2{background:#f0fdf4;color:var(--g2)}.b3{background:#f5f3ff;color:var(--g3)}
+.tb-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.today-lbl{font-size:11px;color:var(--red);font-weight:600;display:flex;align-items:center;gap:4px}
+.tdot{width:7px;height:7px;background:var(--red);border-radius:50%}
+.ibtn{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:var(--surface);
+  font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;color:var(--ts);transition:all .15s}
+.ibtn:hover{border-color:var(--blue);color:var(--blue)}
+.save-ok{font-size:10px;color:var(--tm);transition:color .3s}
+.save-ok.flash{color:#10b981}
+.save-server-btn{background:#1a1d2e;color:#fff;border-color:#1a1d2e;font-weight:600}
+.save-server-btn:hover{background:#374151;border-color:#374151;color:#fff}
+.save-server-btn:disabled{background:#9ca3af;border-color:#9ca3af;cursor:not-allowed}
+.server-status{font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.server-status.ok{color:#10b981}
+.server-status.err{color:#ef4444}
+
+/* ── FILTER BAR ── */
+.filter-bar{background:var(--surface);border-bottom:1px solid var(--border);
+  padding:7px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fl{font-size:10px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.mfs{display:flex;gap:4px;flex-wrap:wrap}
+.mfb{padding:3px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface);
+  font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;color:var(--ts);transition:all .15s}
+.mfb:hover{border-color:var(--blue);color:var(--blue)}
+.mfb.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.mfb.all-btn{font-weight:700}
+.mode-badge{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:600;margin-left:4px}
+.mode-badge.weekly{background:#f0fdf4;color:#10b981}
+.mode-badge.daily{background:#fffbeb;color:#d97706}
+
+/* ── CONTAINER ── */
+.container{padding:14px 20px}
+.prow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.pc{background:var(--surface);border-radius:10px;padding:12px 14px;border:1px solid var(--border)}
+.pc-l{font-size:11px;color:var(--tm);margin-bottom:4px;font-weight:600}
+.pc-v{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.pc-bw{height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.pc-bf{height:100%;border-radius:2px;transition:width .4s}
+.legend{display:flex;gap:14px;margin-bottom:8px;font-size:11px;color:var(--ts);align-items:center;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:5px}
+.lp{width:22px;height:8px;border-radius:3px;background:var(--g1);opacity:.8}
+.la{width:22px;height:5px;border-radius:2px;background:#374151}
+.lo{width:22px;height:5px;border-radius:2px;
+  background:repeating-linear-gradient(90deg,#374151 0,#374151 4px,#6b7280 4px,#6b7280 8px)}
+.lsep{width:1px;height:14px;background:var(--border)}
+
+/* ── GANTT WRAPPER ── */
+.gw{background:var(--surface);border-radius:12px;border:1px solid var(--border);
+  overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.05)}
+.gs{overflow-x:auto}
+.gi{display:flex;min-width:max-content}
+
+/* ── LEFT PANEL ── */
+.lp-wrap{width:var(--lw);flex-shrink:0;border-right:2px solid var(--border);
+  position:sticky;left:0;background:var(--surface);z-index:20}
+.lhdr{display:flex;align-items:flex-end;padding:0 12px 10px;
+  border-bottom:1px solid var(--border);background:#fafbfc}
+.lhdr span{font-size:10px;font-weight:600;color:var(--tm);letter-spacing:.5px;text-transform:uppercase}
+.tr{display:flex;align-items:center;padding:0 12px;
+  border-bottom:1px solid #f1f3f7;gap:7px;transition:background .1s}
+.tr:hover{background:#f8f9fd}
+.tr.ph{background:#fafbfc;border-bottom:1px solid var(--border);font-weight:600}
+.ph-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.t-in{width:12px;flex-shrink:0}
+.tn{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.tr.ph .tn{font-size:13px}
+.ra{display:flex;gap:3px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.tr:hover .ra{opacity:1}
+.ab{width:22px;height:22px;border-radius:5px;border:1px solid var(--border);
+  background:var(--surface);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:11px;color:var(--tm);transition:all .15s}
+.ab:hover{border-color:var(--blue);color:var(--blue);background:#eff6ff}
+.ab.flag:hover{border-color:#f59e0b;color:#f59e0b;background:#fffbeb}
+
+/* ── RIGHT PANEL ── */
+.rp{flex:1;position:relative}
+.gh{border-bottom:1px solid var(--border);background:#fafbfc;display:flex;flex-direction:column}
+
+/* month row */
+.mr{display:flex;border-bottom:1px solid var(--border)}
+.mc{display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:700;
+  border-right:1px solid var(--border);white-space:nowrap}
+
+/* week/day label row */
+.wr{display:flex}
+.wc{display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--tm);
+  font-family:'JetBrains Mono',monospace;border-right:1px solid #f1f3f7;
+  white-space:nowrap;flex-direction:column;gap:1px;flex-shrink:0}
+.wc .wn{font-weight:600;color:var(--ts)}
+/* day cell variants */
+.wc.day-cell{font-size:9px}
+.wc.day-cell .wn{font-size:10px}
+.wc.wknd{background:#fafafa}
+.wc.mon-start{border-right-color:var(--border)}
+
+/* ── GRID ROWS ── */
+/* overflow:visible so flags poke above row */
+.gr{border-bottom:1px solid #f1f3f7;position:relative;display:flex;overflow:visible}
+.gr:hover .gr-bg{background:rgba(59,130,246,.025)}
+.gr.ph{background:#fafbfc;border-bottom:1px solid var(--border)}
+.gr-bg{position:absolute;inset:0;pointer-events:none;border-radius:0}
+
+.gcol{flex-shrink:0;border-right:1px solid #f1f3f7;height:100%}
+.gcol.wknd{background:#fafafa}
+.gcol.mon-start{border-right-color:var(--border)}
+.gcol.week-start{border-right-color:#d1d5db}
+
+/* ── BARS ── */
+/* plan bar top offset is set via JS (CSS var per row) */
+.plan-bar{position:absolute;height:18px;
+  border-radius:4px;cursor:pointer;pointer-events:all;
+  font-size:10px;font-weight:600;color:#fff;
+  display:flex;align-items:center;padding:0 6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);transition:filter .15s;z-index:2}
+.plan-bar:hover{filter:brightness(1.1)}
+
+.actual-bar{position:absolute;height:7px;
+  border-radius:2px;pointer-events:none;background:#374151;
+  box-shadow:0 1px 3px rgba(0,0,0,.15);z-index:2}
+.actual-bar.ong{
+  background:repeating-linear-gradient(90deg,#374151 0,#374151 4px,#6b7280 4px,#6b7280 8px)}
+
+/* ── FLAGS ── */
+.flag-wrap{position:absolute;pointer-events:all;z-index:30;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;transition:transform .12s}
+.flag-wrap:hover{transform:scale(1.2) translateY(-2px);z-index:40}
+.fi{font-size:13px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25))}
+.fs{width:1.5px;background:#374151;flex-shrink:0}
+
+/* ── TODAY LINE ── */
+.today-line{position:absolute;top:0;bottom:0;width:2px;
+  background:var(--red);z-index:25;pointer-events:none}
+.tl-lbl{position:absolute;top:3px;left:50%;transform:translateX(-50%);
+  background:var(--red);color:#fff;font-size:8px;font-weight:700;
+  padding:1px 4px;border-radius:3px;white-space:nowrap}
+
+/* ── FLAG POPUP ── */
+.fp{display:none;position:fixed;z-index:300;background:#1a1d2e;color:#fff;
+  border-radius:10px;padding:13px 15px;width:240px;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);font-size:12px}
+.fp.on{display:block;animation:fi .15s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.fp-ti{font-weight:700;font-size:13px;margin-bottom:6px;padding-right:18px}
+.fp-dt{color:#9ca3af;font-family:'JetBrains Mono',monospace;font-size:11px;margin-bottom:5px}
+.fp-nt{color:#d1d5db;line-height:1.5;margin-bottom:8px;font-size:11px;white-space:pre-wrap}
+.fp-lk{display:inline-flex;align-items:center;gap:4px;color:#60a5fa;font-size:11px;
+  text-decoration:none;word-break:break-all}
+.fp-lk:hover{color:#93c5fd}
+.fp-cl{position:absolute;top:9px;right:10px;cursor:pointer;color:#6b7280;
+  font-size:13px;background:none;border:none}
+.fp-cl:hover{color:#fff}
+.fp-ac{margin-top:8px;padding-top:8px;border-top:1px solid #374151;display:flex;gap:5px}
+.fpb{flex:1;padding:4px;border-radius:5px;border:1px solid #374151;background:transparent;
+  color:#9ca3af;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .15s}
+.fpb:hover{border-color:#60a5fa;color:#60a5fa}
+.fpb.del:hover{border-color:#ef4444;color:#ef4444}
+
+/* ── MODALS ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);
+  z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.overlay.on{display:flex}
+.modal{background:var(--surface);border-radius:14px;padding:22px;width:450px;
+  box-shadow:0 20px 60px rgba(0,0,0,.2);animation:su .2s ease;max-height:90vh;overflow-y:auto}
+.modal.sm{width:390px}
+@keyframes su{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.mt{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.mdot{width:9px;height:9px;border-radius:3px}
+.msec{font-size:10px;font-weight:700;color:var(--tm);letter-spacing:.5px;
+  text-transform:uppercase;margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.mf{margin-bottom:11px}
+.ml{font-size:10px;font-weight:600;color:var(--tm);margin-bottom:4px;
+  letter-spacing:.3px;text-transform:uppercase}
+.mi{width:100%;padding:7px 10px;border-radius:7px;border:1.5px solid var(--border);
+  font-size:13px;font-family:'Noto Sans JP',sans-serif;transition:border-color .15s;outline:none}
+.mi:focus{border-color:var(--blue)}
+.mrow{display:flex;gap:8px}.mrow .mf{flex:1}
+.abox{background:#f9fafb;border-radius:7px;padding:11px;border:1px solid var(--border)}
+.hint{font-size:10px;color:var(--tm);margin-top:3px}
+.mbtns{display:flex;gap:7px;justify-content:flex-end;margin-top:18px}
+.btn{padding:7px 17px;border-radius:7px;font-size:13px;cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;transition:all .15s}
+.btn-c{border:1px solid var(--border);background:var(--surface);color:var(--ts)}
+.btn-c:hover{background:var(--bg)}
+.btn-s{border:none;background:var(--blue);color:#fff;font-weight:600}
+.btn-s:hover{background:#2563eb}
+
+/* ── TOOLTIP ── */
+.tt{display:none;position:fixed;background:#1a1d2e;color:#fff;border-radius:8px;
+  padding:8px 12px;font-size:12px;z-index:999;pointer-events:none;max-width:220px;
+  box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.tt.on{display:block}
+.tt-t{font-weight:700;margin-bottom:2px}
+.tt-s{color:#9ca3af;font-size:11px;font-family:'JetBrains Mono',monospace}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <div><div class="tb-title">📋 WBS 進捗管理 2026</div><div class="tb-sub">業績目標スケジュール管理</div></div>
+    <span class="badge b1">目標① 自動テスト</span>
+    <span class="badge b2">目標② 全体把握</span>
+    <span class="badge b3">目標③ ドキュメント</span>
+  </div>
+  <div class="tb-right">
+    
+    <span class="server-status" id="serverStatus">⚪ 未接続</span>
+    <button class="ibtn save-server-btn" id="saveBtn" onclick="saveToServer()">💾 保存</button>
+    <span class="today-lbl"><span class="tdot"></span><span id="todayLbl"></span></span>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="fl">📅 表示月</span>
+  <div class="mfs" id="mfs"></div>
+  <span id="modeBadge" class="mode-badge weekly">週単位</span>
+</div>
+
+<div class="container">
+  <div class="prow">
+    <div class="pc"><div class="pc-l">目標① 自動テスト構築</div><div class="pc-v" style="color:var(--g1)" id="p1">0%</div><div class="pc-bw"><div class="pc-bf" id="b1" style="background:var(--g1);width:0%"></div></div></div>
+    <div class="pc"><div class="pc-l">目標② 全体把握者拡大</div><div class="pc-v" style="color:var(--g2)" id="p2">0%</div><div class="pc-bw"><div class="pc-bf" id="b2" style="background:var(--g2);width:0%"></div></div></div>
+    <div class="pc"><div class="pc-l">目標③ ドキュメント整備</div><div class="pc-v" style="color:var(--g3)" id="p3">0%</div><div class="pc-bw"><div class="pc-bf" id="b3" style="background:var(--g3);width:0%"></div></div></div>
+  </div>
+  <div class="legend">
+    <div class="li"><div class="lp"></div><span>予定（計画）</span></div>
+    <div class="li"><div class="la"></div><span>実績（完了）</span></div>
+    <div class="li"><div class="lo"></div><span>実績（着手中）</span></div>
+    <div class="lsep"></div>
+    <div class="li"><span style="font-size:13px">🚩</span><span>提出物（バーの上に表示）</span></div>
+    <div style="flex:1"></div>
+    <span style="font-size:10px;color:var(--tm)">✏️ バークリックで編集 ／ 🚩 で提出物追加</span>
+  </div>
+  <div class="gw">
+    <div class="gs" id="gs">
+      <div class="gi" id="gi"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="overlay" id="tOv" onclick="closeTM(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mt"><div class="mdot" id="mDot"></div>✏️ タスク編集</div>
+    <div class="mf"><div class="ml">タスク名</div><input class="mi" id="eName" type="text"></div>
+    <div class="msec">📅 予定（計画）</div>
+    <div class="mrow">
+      <div class="mf"><div class="ml">開始日</div><input class="mi" id="eS" type="date"></div>
+      <div class="mf"><div class="ml">終了日</div><input class="mi" id="eE" type="date"></div>
+    </div>
+    <div class="msec">✅ 実績（完了）</div>
+    <div class="abox">
+      <div class="mrow">
+        <div class="mf"><div class="ml">実績 開始日</div><input class="mi" id="eAS" type="date"></div>
+        <div class="mf"><div class="ml">実績 終了日</div><input class="mi" id="eAE" type="date"></div>
+      </div>
+      <div class="hint">開始日のみ → ストライプ（着手中）／ 両方 → 黒バー（完了）</div>
+    </div>
+    <div class="mf" style="margin-top:11px"><div class="ml">進捗 (%)</div><input class="mi" id="ePr" type="number" min="0" max="100" step="5"></div>
+    <div class="mbtns">
+      <button class="btn btn-c" onclick="closeTM()">キャンセル</button>
+      <button class="btn btn-s" onclick="saveTask()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELIVERY MODAL -->
+<div class="overlay" id="dOv" onclick="closeDM(event)">
+  <div class="modal sm" onclick="event.stopPropagation()">
+    <div class="mt">🚩 提出物マーカー</div>
+    <div class="mf"><div class="ml">タイトル</div><input class="mi" id="dTi" type="text" placeholder="例: 要件定義書 v1.0"></div>
+    <div class="mf"><div class="ml">提出日</div><input class="mi" id="dDt" type="date"></div>
+    <div class="mf"><div class="ml">コメント・参照先（任意）</div>
+    <textarea class="mi" id="dNt" rows="3" placeholder="例: 上長レビュー済み&#10;参照先: Googleドライブ/業績評価/提出物/要件定義書v1.pdf" style="resize:vertical;font-family:inherit;font-size:13px;line-height:1.6"></textarea>
+    <div class="hint">ファイルパスやコメントを自由に記載できます</div></div>
+    <div class="mbtns">
+      <button class="btn btn-c" onclick="closeDM()">キャンセル</button>
+      <button class="btn btn-s" onclick="saveDel()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLAG POPUP -->
+<div class="fp" id="fpop">
+  <button class="fp-cl" onclick="closeFP()">✕</button>
+  <div class="fp-ti" id="fpTi"></div>
+  <div class="fp-dt" id="fpDt"></div>
+  <div class="fp-nt" id="fpNt"></div>
+
+  <div class="fp-ac">
+    <button class="fpb" onclick="editFlag()">✏️ 編集</button>
+    <button class="fpb del" onclick="delFlag()">🗑 削除</button>
+  </div>
+</div>
+
+<!-- TOOLTIP -->
+<div class="tt" id="tt"><div class="tt-t" id="ttT"></div><div class="tt-s" id="ttS"></div></div>
+
+<script>
+// ════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════
+const LS_KEY = 'wbs2026v5';
+
+// "すべて" range
+const ALL_START = new Date('2026-04-25');
+const ALL_END   = new Date('2026-10-04');
+
+// Per-month ranges
+const MONTH_DEFS = [
+  {m:4,  label:'5月', start:new Date('2026-05-01'), end:new Date('2026-05-31')},
+  {m:5,  label:'6月', start:new Date('2026-06-01'), end:new Date('2026-06-30')},
+  {m:6,  label:'7月', start:new Date('2026-07-01'), end:new Date('2026-07-31')},
+  {m:7,  label:'8月', start:new Date('2026-08-01'), end:new Date('2026-08-31')},
+  {m:8,  label:'9月', start:new Date('2026-09-01'), end:new Date('2026-09-30')},
+];
+
+// Pixel width per unit
+const WEEK_PX = 80;  // "すべて" mode: px per week
+const DAY_PX  = 22;  // month mode: px per day
+
+// Row heights — taller in daily mode so flags have room above bar
+const ROW_H_WEEKLY = 56;
+const ROW_H_DAILY  = 70;
+
+// Plan bar top offset from row top
+const PLAN_TOP_WEEKLY = 20;
+const PLAN_TOP_DAILY  = 30;
+
+// ════════════════════════════════════
+// DATA
+// ════════════════════════════════════
+const C = {g1:'#3b82f6', g2:'#10b981', g3:'#8b5cf6'};
+const DEF_TASKS = [
+  {id:'g1',  type:'phase', name:'目標① 自動テスト構築（Playwright）', color:C.g1},
+  {id:'t1_1',type:'task',  name:'01. 要件定義・設計',           start:'2026-05-01',end:'2026-05-31',color:C.g1,progress:0,goal:1,aS:'',aE:''},
+  {id:'t1_2',type:'task',  name:'02. 環境構築（Playwright）',    start:'2026-06-01',end:'2026-06-15',color:C.g1,progress:0,goal:1,aS:'',aE:''},
+  {id:'t1_3',type:'task',  name:'03. テストスクリプト実装',      start:'2026-06-20',end:'2026-08-31',color:C.g1,progress:0,goal:1,aS:'',aE:''},
+  {id:'t1_4',type:'task',  name:'04. 全体実行確認・修正',        start:'2026-09-01',end:'2026-09-30',color:C.g1,progress:0,goal:1,aS:'',aE:''},
+  {id:'g2',  type:'phase', name:'目標② 全体把握者の拡大', color:C.g2},
+  {id:'t2_1',type:'task',  name:'01. 定例参加・議事録整理（継続）',start:'2026-05-01',end:'2026-08-31',color:C.g2,progress:0,goal:2,aS:'',aE:''},
+  {id:'t2_2',type:'task',  name:'02. プロジェクト全体構造の把握',  start:'2026-05-01',end:'2026-08-31',color:C.g2,progress:0,goal:2,aS:'',aE:''},
+  {id:'t2_3',type:'task',  name:'03. 定例で回答できる実績作り',    start:'2026-06-01',end:'2026-08-31',color:C.g2,progress:0,goal:2,aS:'',aE:''},
+  {id:'g3',  type:'phase', name:'目標③ 属人化解消・ドキュメント整備', color:C.g3},
+  {id:'t3_1',type:'task',  name:'01. 属人化業務フロー洗い出し',       start:'2026-05-01',end:'2026-05-15',color:C.g3,progress:0,goal:3,aS:'',aE:''},
+  {id:'t3_2',type:'task',  name:'02. ドキュメント作成（2週に1本）',   start:'2026-05-15',end:'2026-08-15',color:C.g3,progress:0,goal:3,aS:'',aE:''},
+  {id:'t3_3',type:'task',  name:'03. チームメンバーへの展開',         start:'2026-08-01',end:'2026-08-31',color:C.g3,progress:0,goal:3,aS:'',aE:''},
+];
+
+let tasks=[], deliveries=[], delCnt=1;
+let editTId=null, editDel={taskId:null,id:null}, activeFlagId=null;
+let filterM = null; // null = all, number = month index (4=May,5=Jun…)
+
+// ════════════════════════════════════
+// PERSISTENCE
+// ════════════════════════════════════
+function saveLS(){
+  try{ localStorage.setItem(LS_KEY,JSON.stringify({tasks,deliveries,delCnt})); flashSave(); }catch(e){}
+}
+function loadLS(){
+  try{
+    const r=localStorage.getItem(LS_KEY); if(!r) return false;
+    const d=JSON.parse(r);
+    tasks=d.tasks||[]; deliveries=d.deliveries||[]; delCnt=d.delCnt||1; return true;
+  }catch(e){return false;}
+}
+function resetAll(){
+  if(!confirm('すべてのデータをリセットしますか？')) return;
+  localStorage.removeItem(LS_KEY);
+  tasks=JSON.parse(JSON.stringify(DEF_TASKS)); deliveries=[]; delCnt=1;
+  saveLS(); render();
+}
+let _st=null;
+function deferSave(){ clearTimeout(_st); _st=setTimeout(saveLS,400); }
+function flashSave(){
+  const el=document.getElementById('saveOk');
+  el.textContent='✅ 保存済み'; el.classList.add('flash');
+  setTimeout(()=>{ el.textContent='💾 自動保存済み'; el.classList.remove('flash'); },2000);
+}
+
+// ════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════
+function daysBetween(a,b){ return Math.round((b-a)/864e5); }
+function fmt(d){ const dt=new Date(d); return `${dt.getFullYear()}/${p(dt.getMonth()+1)}/${p(dt.getDate())}`; }
+function p(n){ return String(n).padStart(2,'0'); }
+function iso(d){ if(!d)return ''; const dt=new Date(d); return `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}`; }
+function darken(h,pct){ let r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16),f=1-pct/100; return `rgb(${~~(r*f)},${~~(g*f)},${~~(b*f)})`; }
+function mk(tag,cls){ const e=document.createElement(tag); if(cls) e.className=cls; return e; }
+function isWeekend(d){ return d.getDay()===0||d.getDay()===6; }
+function isMonday(d){ return d.getDay()===1; }
+const DOW=['日','月','火','水','木','金','土'];
+
+// ════════════════════════════════════
+// VIEW PARAMS
+// ════════════════════════════════════
+function getViewParams(){
+  const isAll = filterM===null;
+  const viewStart = isAll ? new Date(ALL_START) : MONTH_DEFS.find(x=>x.m===filterM).start;
+  const viewEnd   = isAll ? new Date(ALL_END)   : MONTH_DEFS.find(x=>x.m===filterM).end;
+  const wpx       = isAll ? WEEK_PX : null;
+  const rowH      = isAll ? ROW_H_WEEKLY : ROW_H_DAILY;
+  const planTop   = isAll ? PLAN_TOP_WEEKLY : PLAN_TOP_DAILY;
+
+  // daily mode: compute dpx so total width = gantt scroll area width
+  let dpx = null;
+  if(!isAll){
+    const numDays = daysBetween(viewStart, viewEnd) + 1;
+    // available width = window width minus left panel width and some padding
+    const LW_PX = 330;
+    const PADDING = 40; // container padding both sides
+    const availW = window.innerWidth - LW_PX - PADDING;
+    dpx = Math.max(Math.floor(availW / numDays), 12); // min 12px/day
+  }
+
+  return {isAll, viewStart, viewEnd, dpx, wpx, rowH, planTop};
+}
+
+// x coordinate of a date from viewStart
+function d2x({isAll, viewStart, dpx, wpx}, date){
+  const dt = typeof date==='string'?new Date(date):new Date(date);
+  if(isAll){
+    // weekly: x = weeks * WEEK_PX (fractional weeks ok)
+    return daysBetween(viewStart, dt) / 7 * wpx;
+  } else {
+    return daysBetween(viewStart, dt) * dpx;
+  }
+}
+
+// ════════════════════════════════════
+// WEEKLY MODE: build weeks array
+// ════════════════════════════════════
+function buildWeeks(viewStart, viewEnd){
+  const weeks=[];
+  // align to nearest Monday ≤ viewStart
+  let cur=new Date(viewStart);
+  const dow=cur.getDay();
+  if(dow!==1) cur.setDate(cur.getDate()-(dow===0?6:dow-1));
+  while(cur<=viewEnd){ weeks.push(new Date(cur)); cur.setDate(cur.getDate()+7); }
+  return weeks;
+}
+
+function buildMonthSpansFromWeeks(weeks){
+  const spans=[]; let cur=null;
+  weeks.forEach((w,i)=>{
+    const key=`${w.getFullYear()}-${w.getMonth()}`;
+    if(!cur||cur.key!==key){
+      if(cur) cur.span=i-cur.si;
+      cur={key,label:`${w.getFullYear()}年${w.getMonth()+1}月`,si:i,span:0};
+      spans.push(cur);
+    }
+  });
+  if(cur) cur.span=weeks.length-cur.si;
+  return spans;
+}
+
+// ════════════════════════════════════
+// DAILY MODE: build days array
+// ════════════════════════════════════
+function buildDays(viewStart, viewEnd){
+  const days=[]; let cur=new Date(viewStart);
+  while(cur<=viewEnd){ days.push(new Date(cur)); cur.setDate(cur.getDate()+1); }
+  return days;
+}
+
+function buildMonthSpansFromDays(days){
+  const spans=[]; let cur=null;
+  days.forEach((d,i)=>{
+    const key=`${d.getFullYear()}-${d.getMonth()}`;
+    if(!cur||cur.key!==key){
+      if(cur) cur.span=i-cur.si;
+      cur={key,label:`${d.getFullYear()}年${d.getMonth()+1}月`,si:i,span:0};
+      spans.push(cur);
+    }
+  });
+  if(cur) cur.span=days.length-cur.si;
+  return spans;
+}
+
+// ════════════════════════════════════
+// FLAG STACKING
+// ════════════════════════════════════
+const CLUSTER_PX = 18;
+const STACK_STEP = 15;
+
+function computeStacks(dels, vp){
+  const sorted=[...dels].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const xs=sorted.map(d=>d2x(vp,d.date));
+  const levels=[];
+  sorted.forEach((_,i)=>{
+    let lvl=0;
+    for(let j=0;j<i;j++){
+      if(Math.abs(xs[i]-xs[j])<=CLUSTER_PX && levels[j]>=lvl) lvl=levels[j]+1;
+    }
+    levels.push(lvl);
+  });
+  return sorted.map((d,i)=>({...d,lvl:levels[i]}));
+}
+
+// ════════════════════════════════════
+// FILTER UI
+// ════════════════════════════════════
+function buildFilterUI(){
+  const c=document.getElementById('mfs'); c.innerHTML='';
+
+  const allB=mk('button','mfb all-btn');
+  allB.textContent='すべて（4/25〜10/4）';
+  allB.classList.toggle('on',filterM===null);
+  allB.onclick=()=>{ filterM=null; render(); };
+  c.appendChild(allB);
+
+  MONTH_DEFS.forEach(({m,label})=>{
+    const b=mk('button','mfb');
+    b.textContent=label;
+    b.classList.toggle('on',filterM===m);
+    b.onclick=()=>{ filterM=(filterM===m)?null:m; render(); };
+    c.appendChild(b);
+  });
+
+  const badge=document.getElementById('modeBadge');
+  if(filterM===null){
+    badge.textContent='週単位グリッド'; badge.className='mode-badge weekly';
+  } else {
+    badge.textContent='日単位グリッド'; badge.className='mode-badge daily';
+  }
+}
+
+// ════════════════════════════════════
+// RENDER
+// ════════════════════════════════════
+function render(){
+  buildFilterUI();
+  const vp = getViewParams();
+  const {isAll, viewStart, viewEnd, rowH, planTop, wpx, dpx} = vp;
+
+  // Build column units
+  let units, monthSpans, totalW, hdrH;
+
+  if(isAll){
+    // weekly mode
+    const weeks = buildWeeks(viewStart, viewEnd);
+    monthSpans = buildMonthSpansFromWeeks(weeks);
+    totalW = weeks.length * wpx;
+    hdrH = 80;
+    renderGantt_weekly(vp, weeks, monthSpans, totalW, hdrH, rowH, planTop);
+  } else {
+    // daily mode
+    const days = buildDays(viewStart, viewEnd);
+    monthSpans = buildMonthSpansFromDays(days);
+    totalW = days.length * dpx;
+    hdrH = 80;
+    renderGantt_daily(vp, days, monthSpans, totalW, hdrH, rowH, planTop);
+  }
+
+  updateProgress();
+  updateTodayLbl();
+}
+
+// ── shared left panel builder ──
+function buildLeftPanel(rowH){
+  const lp=mk('div','lp-wrap');
+  const lh=mk('div','lhdr'); lh.style.height='80px'; lh.innerHTML='<span>タスク名</span>'; lp.appendChild(lh);
+  tasks.forEach(t=>{
+    const row=mk('div','tr'+(t.type==='phase'?' ph':''));
+    row.style.height=rowH+'px';
+    if(t.type==='phase'){ const d=mk('div','ph-dot'); d.style.background=t.color; row.appendChild(d); }
+    else row.appendChild(mk('div','t-in'));
+    const nm=mk('div','tn'); nm.textContent=t.name; row.appendChild(nm);
+    if(t.type==='task'){
+      const ra=mk('div','ra');
+      const eb=mk('button','ab'); eb.innerHTML='✏️'; eb.title='タスク編集';
+      eb.onclick=e=>{e.stopPropagation();openTM(t.id);}; ra.appendChild(eb);
+      const fb=mk('button','ab flag'); fb.innerHTML='🚩'; fb.title='提出物を追加';
+      fb.onclick=e=>{e.stopPropagation();openDM(t.id,null);}; ra.appendChild(fb);
+      row.appendChild(ra);
+    }
+    lp.appendChild(row);
+  });
+  return lp;
+}
+
+// ── shared flag renderer ──
+function renderFlags(row, t, vp, planTop){
+  const {viewStart, viewEnd} = vp;
+  const rowDels = deliveries.filter(d=>{
+    if(d.taskId!==t.id) return false;
+    const dd=new Date(d.date);
+    return dd>=viewStart && dd<=viewEnd;
+  });
+  if(!rowDels.length) return;
+
+  const stacked = computeStacks(rowDels, vp);
+  stacked.forEach(d=>{
+    const fx = d2x(vp, d.date);
+    const stemH = 10 + d.lvl * STACK_STEP;
+    // top of flag-wrap: planTop - stemH - 14(icon height)
+    const topY = planTop - stemH - 14;
+
+    const wrap=mk('div','flag-wrap');
+    wrap.style.left=(fx-7)+'px';
+    wrap.style.top=topY+'px';
+    wrap.innerHTML=`<span class="fi">🚩</span><div class="fs" style="height:${stemH}px"></div>`;
+    wrap.addEventListener('click',e=>{e.stopPropagation();showFP(e,d);});
+    wrap.addEventListener('mouseenter',e=>showTT(e,'🚩 '+d.title,fmt(d.date)));
+    wrap.addEventListener('mousemove',moveTT); wrap.addEventListener('mouseleave',hideTT);
+    row.appendChild(wrap);
+  });
+}
+
+// ── shared bar renderer (clips to view) ──
+function renderBars(row, t, vp, planTop){
+  const {viewStart, viewEnd} = vp;
+  const tStart=new Date(t.start), tEnd=new Date(t.end);
+  const barS = tStart<viewStart?viewStart:tStart;
+  const barE = tEnd>viewEnd?viewEnd:tEnd;
+
+  if(barS>viewEnd || barE<viewStart) return; // not in view → empty row (no bar)
+
+  const sx = d2x(vp, barS);
+  const ex = d2x(vp, barE);
+  const unitPx = vp.isAll ? vp.wpx/7 : vp.dpx;
+  const bw = Math.max(ex - sx + unitPx, unitPx);
+
+  // PLAN BAR
+  const pb=mk('div','plan-bar');
+  pb.style.top=planTop+'px';
+  pb.style.left=sx+'px';
+  pb.style.width=bw+'px';
+  pb.style.background=t.progress>0
+    ?`linear-gradient(90deg,${darken(t.color,15)} ${t.progress}%,${t.color} ${t.progress}%)`
+    :t.color;
+  pb.addEventListener('mouseenter',e=>showTT(e,t.name+' (予定)',`${fmt(t.start)} 〜 ${fmt(t.end)}　進捗 ${t.progress||0}%`));
+  pb.addEventListener('mousemove',moveTT); pb.addEventListener('mouseleave',hideTT);
+  pb.addEventListener('click',()=>openTM(t.id));
+  row.appendChild(pb);
+
+  // ACTUAL BAR
+  if(t.aS){
+    const aStart=new Date(t.aS);
+    const aEnd=t.aE?new Date(t.aE):(new Date()<new Date(t.end)?new Date():new Date(t.end));
+    const aS2=aStart<viewStart?viewStart:aStart;
+    const aE2=aEnd>viewEnd?viewEnd:aEnd;
+    if(aS2<=viewEnd && aE2>=viewStart){
+      const ax=d2x(vp,aS2);
+      const aw=Math.max(d2x(vp,aE2)-ax+unitPx, unitPx);
+      const ab=mk('div','actual-bar'+(t.aE?'':' ong'));
+      ab.style.top=(planTop+22)+'px';
+      ab.style.left=ax+'px'; ab.style.width=aw+'px';
+      row.appendChild(ab);
+    }
+  }
+}
+
+// ════════════════════════════════════
+// WEEKLY RENDER
+// ════════════════════════════════════
+function renderGantt_weekly(vp, weeks, monthSpans, totalW, hdrH, rowH, planTop){
+  const gi=document.getElementById('gi'); gi.innerHTML='';
+  gi.appendChild(buildLeftPanel(rowH));
+
+  const rp=mk('div','rp'); rp.style.width=totalW+'px';
+  const gh=mk('div','gh'); gh.style.height=hdrH+'px';
+
+  // Month row
+  const mr=mk('div','mr'); mr.style.height='36px';
+  monthSpans.forEach(({label,span})=>{
+    const c=mk('div','mc'); c.style.width=(span*vp.wpx)+'px'; c.textContent=label; mr.appendChild(c);
+  });
+  gh.appendChild(mr);
+
+  // Week row
+  const wr=mk('div','wr'); wr.style.height='44px';
+  weeks.forEach(w=>{
+    const c=mk('div','wc'); c.style.width=vp.wpx+'px';
+    const e2=new Date(w); e2.setDate(e2.getDate()+6);
+    c.innerHTML=`<span class="wn">${w.getMonth()+1}/${w.getDate()}</span><span>〜${e2.getMonth()+1}/${e2.getDate()}</span>`;
+    wr.appendChild(c);
+  });
+  gh.appendChild(wr);
+  rp.appendChild(gh);
+
+  // Grid
+  const ga=mk('div','ga');
+  tasks.forEach(t=>{
+    const row=mk('div','gr'+(t.type==='phase'?' ph':''));
+    row.style.height=rowH+'px';
+    row.appendChild(mk('div','gr-bg'));
+    weeks.forEach((w,wi)=>{
+      const col=mk('div','gcol');
+      col.style.width=vp.wpx+'px'; col.style.height=rowH+'px';
+      if(wi>0 && weeks[wi].getMonth()!==weeks[wi-1].getMonth()) col.classList.add('mon-start');
+      row.appendChild(col);
+    });
+    if(t.type==='task'){
+      renderBars(row,t,vp,planTop);
+      renderFlags(row,t,vp,planTop);
+    }
+    ga.appendChild(row);
+  });
+
+  // Today line
+  const today=new Date();
+  if(today>=vp.viewStart && today<=vp.viewEnd){
+    const tl=mk('div','today-line');
+    tl.style.left=d2x(vp,today)+'px';
+    tl.innerHTML='<div class="tl-lbl">今日</div>';
+    ga.appendChild(tl);
+  }
+
+  rp.appendChild(ga);
+  gi.appendChild(rp);
+}
+
+// ════════════════════════════════════
+// DAILY RENDER
+// ════════════════════════════════════
+function renderGantt_daily(vp, days, monthSpans, totalW, hdrH, rowH, planTop){
+  const gi=document.getElementById('gi'); gi.innerHTML='';
+  gi.appendChild(buildLeftPanel(rowH));
+
+  const rp=mk('div','rp'); rp.style.width=totalW+'px';
+  const gh=mk('div','gh'); gh.style.height=hdrH+'px';
+
+  // Month row
+  const mr=mk('div','mr'); mr.style.height='28px';
+  monthSpans.forEach(({label,span})=>{
+    const c=mk('div','mc'); c.style.width=(span*vp.dpx)+'px'; c.textContent=label; mr.appendChild(c);
+  });
+  gh.appendChild(mr);
+
+  // Day row
+  const dr=mk('div','wr'); dr.style.height='52px';
+  days.forEach((d,i)=>{
+    const prev=i>0?days[i-1]:null;
+    const isMon=prev&&d.getMonth()!==prev.getMonth();
+    const cls='wc day-cell'+(isWeekend(d)?' wknd':'')+(isMon?' mon-start':'');
+    const c=mk('div',cls); c.style.width=vp.dpx+'px';
+    c.innerHTML=`<span class="wn">${d.getDate()}</span><span>${DOW[d.getDay()]}</span>`;
+    dr.appendChild(c);
+  });
+  gh.appendChild(dr);
+  rp.appendChild(gh);
+
+  // Grid
+  const ga=mk('div','ga');
+  tasks.forEach(t=>{
+    const row=mk('div','gr'+(t.type==='phase'?' ph':''));
+    row.style.height=rowH+'px';
+    row.appendChild(mk('div','gr-bg'));
+    days.forEach((d,i)=>{
+      const prev=i>0?days[i-1]:null;
+      const isMon=prev&&d.getMonth()!==prev.getMonth();
+      const cls='gcol'+(isWeekend(d)?' wknd':'')+(isMon?' mon-start':'')+(isMonday(d)?' week-start':'');
+      const col=mk('div',cls); col.style.width=vp.dpx+'px'; col.style.height=rowH+'px';
+      row.appendChild(col);
+    });
+    if(t.type==='task'){
+      renderBars(row,t,vp,planTop);
+      renderFlags(row,t,vp,planTop);
+    }
+    ga.appendChild(row);
+  });
+
+  // Today line
+  const today=new Date();
+  if(today>=vp.viewStart && today<=vp.viewEnd){
+    const tl=mk('div','today-line');
+    tl.style.left=d2x(vp,today)+'px';
+    tl.innerHTML='<div class="tl-lbl">今日</div>';
+    ga.appendChild(tl);
+  }
+
+  rp.appendChild(ga);
+  gi.appendChild(rp);
+}
+
+// ════════════════════════════════════
+// PROGRESS / LABELS
+// ════════════════════════════════════
+function updateProgress(){
+  [1,2,3].forEach(g=>{
+    const gt=tasks.filter(t=>t.type==='task'&&t.goal===g);
+    const avg=gt.length?Math.round(gt.reduce((s,t)=>s+(t.progress||0),0)/gt.length):0;
+    document.getElementById('p'+g).textContent=avg+'%';
+    document.getElementById('b'+g).style.width=avg+'%';
+  });
+}
+function updateTodayLbl(){
+  const t=new Date();
+  document.getElementById('todayLbl').textContent=`今日 ${t.getMonth()+1}/${t.getDate()}`;
+}
+function scrollToToday(){
+  const vp=getViewParams();
+  const today=new Date();
+  if(today<vp.viewStart||today>vp.viewEnd) return;
+  const x=d2x(vp,today);
+  document.getElementById('gs').scrollTo({left:Math.max(0,x-200),behavior:'smooth'});
+}
+
+// ════════════════════════════════════
+// TASK MODAL
+// ════════════════════════════════════
+function openTM(id){
+  const t=tasks.find(t=>t.id===id); if(!t||t.type==='phase') return;
+  editTId=id;
+  document.getElementById('mDot').style.background=t.color;
+  document.getElementById('eName').value=t.name;
+  document.getElementById('eS').value=iso(t.start);
+  document.getElementById('eE').value=iso(t.end);
+  document.getElementById('eAS').value=t.aS||'';
+  document.getElementById('eAE').value=t.aE||'';
+  document.getElementById('ePr').value=t.progress||0;
+  document.getElementById('tOv').classList.add('on');
+}
+function closeTM(e){
+  if(!e||e.target===document.getElementById('tOv')){
+    document.getElementById('tOv').classList.remove('on'); editTId=null;
+  }
+}
+function saveTask(){
+  if(!editTId) return;
+  const t=tasks.find(t=>t.id===editTId); if(!t) return;
+  t.name=document.getElementById('eName').value;
+  t.start=document.getElementById('eS').value;
+  t.end=document.getElementById('eE').value;
+  t.aS=document.getElementById('eAS').value;
+  t.aE=document.getElementById('eAE').value;
+  t.progress=parseInt(document.getElementById('ePr').value)||0;
+  document.getElementById('tOv').classList.remove('on'); editTId=null;
+  deferSave(); render();
+}
+
+// ════════════════════════════════════
+// DELIVERY MODAL
+// ════════════════════════════════════
+function openDM(taskId,delId){
+  editDel={taskId,id:delId};
+  if(delId){
+    const d=deliveries.find(d=>d.id===delId);
+    document.getElementById('dTi').value=d.title;
+    document.getElementById('dDt').value=d.date;
+    document.getElementById('dNt').value=d.note||'';
+
+  } else {
+    ['dTi','dNt'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('dDt').value='';
+  }
+  closeFP();
+  document.getElementById('dOv').classList.add('on');
+}
+function closeDM(e){
+  if(!e||e.target===document.getElementById('dOv')){
+    document.getElementById('dOv').classList.remove('on'); editDel={taskId:null,id:null};
+  }
+}
+function saveDel(){
+  const title=document.getElementById('dTi').value.trim();
+  const date=document.getElementById('dDt').value;
+  if(!title||!date){alert('タイトルと提出日は必須です');return;}
+  if(editDel.id){
+    const d=deliveries.find(d=>d.id===editDel.id);
+    Object.assign(d,{title,date,note:document.getElementById('dNt').value});
+  } else {
+    deliveries.push({id:'del_'+(delCnt++),taskId:editDel.taskId,title,date,
+      note:document.getElementById('dNt').value});
+  }
+  document.getElementById('dOv').classList.remove('on');
+  deferSave(); render();
+}
+
+// ════════════════════════════════════
+// FLAG POPUP
+// ════════════════════════════════════
+function showFP(e,d){
+  activeFlagId=d.id;
+  document.getElementById('fpTi').textContent='🚩 '+d.title;
+  document.getElementById('fpDt').textContent='📅 '+fmt(d.date);
+  const nt=document.getElementById('fpNt'); nt.textContent=d.note||''; nt.style.display=d.note?'':'none';
+
+  const pp=document.getElementById('fpop'); pp.classList.add('on');
+  pp.style.left=Math.min(e.clientX+12,window.innerWidth-256)+'px';
+  pp.style.top=Math.min(e.clientY-10,window.innerHeight-200)+'px';
+}
+function closeFP(){ document.getElementById('fpop').classList.remove('on'); activeFlagId=null; }
+function editFlag(){ if(!activeFlagId) return; const d=deliveries.find(d=>d.id===activeFlagId); openDM(d.taskId,d.id); }
+function delFlag(){
+  if(!activeFlagId) return;
+  if(confirm('削除しますか？')){ deliveries=deliveries.filter(d=>d.id!==activeFlagId); closeFP(); deferSave(); render(); }
+}
+document.addEventListener('click',e=>{
+  const pp=document.getElementById('fpop');
+  if(pp.classList.contains('on')&&!pp.contains(e.target)) closeFP();
+});
+
+// ════════════════════════════════════
+// TOOLTIP
+// ════════════════════════════════════
+function showTT(e,t,s){ const tt=document.getElementById('tt'); document.getElementById('ttT').textContent=t; document.getElementById('ttS').textContent=s||''; tt.classList.add('on'); moveTT(e); }
+function moveTT(e){ const tt=document.getElementById('tt'); tt.style.left=(e.clientX+14)+'px'; tt.style.top=(e.clientY-10)+'px'; }
+function hideTT(){ document.getElementById('tt').classList.remove('on'); }
+
+// ════════════════════════════════════
+// EXPORT
+// ════════════════════════════════════
+// ════════════════════════════════════
+// SERVER SYNC
+// ════════════════════════════════════
+var GH_TOKEN = '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';
+var GH_OWNER = 'ishikawa0817';
+var GH_REPO  = 'wbs-progress';
+var GH_FILE  = 'wbs_data.json';
+var GH_API   = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + GH_FILE;
+
+function setStatus(msg, cls){
+  var el = document.getElementById('serverStatus');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'server-status' + (cls ? ' ' + cls : '');
+}
+
+function saveToServer(){
+  var btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+  var data = {tasks: tasks, deliveries: deliveries, delCnt: delCnt};
+  var content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+  // まず現在のSHAを取得（上書きに必要）
+  fetch(GH_API, {
+    headers: {
+      'Authorization': 'token ' + GH_TOKEN,
+      'Accept': 'application/vnd.github.v3+json'
+    }
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(res){
+    var sha = res.sha || null;
+    var body = { message: '進捗更新 ' + new Date().toLocaleString('ja-JP'), content: content };
+    if(sha) body.sha = sha;
+    return fetch(GH_API, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + GH_TOKEN,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(res){
+    if(res.content){
+      var now = new Date();
+      var hm = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+      setStatus('✅ ' + hm + ' 保存済み', 'ok');
+      saveLS();
+    } else {
+      console.error('GitHub save error:', res);
+      setStatus('❌ 保存失敗', 'err');
+    }
+    btn.disabled = false;
+    btn.textContent = '💾 保存';
+  })
+  .catch(function(e){
+    console.error(e);
+    setStatus('❌ 保存失敗', 'err');
+    btn.disabled = false;
+    btn.textContent = '💾 保存';
+  });
+}
+
+function loadFromServer(){
+  return fetch(GH_API + '?ref=main&t=' + Date.now(), {
+    headers: {
+      'Authorization': 'token ' + GH_TOKEN,
+      'Accept': 'application/vnd.github.v3+json'
+    }
+  })
+  .then(function(r){
+    if(!r.ok) throw new Error('not found');
+    return r.json();
+  })
+  .then(function(res){
+    if(!res.content) return false;
+    var json = decodeURIComponent(escape(atob(res.content)));
+    var data = JSON.parse(json);
+    if(!data || !data.tasks) return false;
+    tasks = data.tasks;
+    deliveries = data.deliveries || [];
+    delCnt = data.delCnt || 1;
+    setStatus('🟢 最新データ読込済み', 'ok');
+    return true;
+  })
+  .catch(function(){
+    setStatus('⚪ ローカルデータを表示中', '');
+    return false;
+  });
+}
+
+// ════════════════════════════════════
+// INIT
+// ════════════════════════════════════
+// サーバーからロード → 失敗時はlocalStorage → それも無ければデフォルト
+loadFromServer().then(function(fromServer){
+  if(!fromServer && !loadLS()){
+    tasks = JSON.parse(JSON.stringify(DEF_TASKS));
+    deliveries = []; delCnt = 1;
+  }
+  render();
+  setTimeout(scrollToToday, 100);
+});
+
+// リサイズ時に再描画
+let _resizeTimer=null;
+window.addEventListener('resize',function(){
+  clearTimeout(_resizeTimer);
+  _resizeTimer=setTimeout(render,150);
+});
+</script>
+</body>
+</html>
