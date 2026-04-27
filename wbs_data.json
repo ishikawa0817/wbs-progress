@@ -1,1 +1,152 @@
-{}
+{
+  "delCnt": 2,
+  "deliveries": [
+    {
+      "date": "2026-04-27",
+      "id": "del_1",
+      "note": "",
+      "taskId": "t1_2",
+      "title": "aaaaa"
+    }
+  ],
+  "tasks": [
+    {
+      "color": "#3b82f6",
+      "id": "g1",
+      "name": "目標① 自動テスト構築（Playwright）",
+      "type": "phase"
+    },
+    {
+      "aE": "",
+      "aS": "",
+      "color": "#3b82f6",
+      "end": "2026-05-31",
+      "goal": 1,
+      "id": "t1_1",
+      "name": "01. 要件定義・設計",
+      "progress": 0,
+      "start": "2026-05-01",
+      "type": "task"
+    },
+    {
+      "aE": "",
+      "aS": "",
+      "color": "#3b82f6",
+      "end": "2026-06-17",
+      "goal": 1,
+      "id": "t1_2",
+      "name": "02. 環境構築（Playwright）",
+      "progress": 0,
+      "start": "2026-06-01",
+      "type": "task"
+    },
+    {
+      "aE": "",
+      "aS": "",
+      "color": "#3b82f6",
+      "end": "2026-08-31",
+      "goal": 1,
+      "id": "t1_3",
+      "name": "03. テストスクリプト実装",
+      "progress": 0,
+      "start": "2026-06-20",
+      "type": "task"
+    },
+    {
+      "aE": "",
+      "aS": "",
+      "color": "#3b82f6",
+      "end": "2026-09-30",
+      "goal": 1,
+      "id": "t1_4",
+      "name": "04. 全体実行確認・修正",
+      "progress": 0,
+      "start": "2026-09-01",
+      "type": "task"
+    },
+    {
+      "color": "#10b981",
+      "id": "g2",
+      "name": "目標② 全体把握者の拡大",
+      "type": "phase"
+    },
+    {
+      "aE": "",
+      "aS": "",
+      "color": "#10b981",
+      "end": "2026-08-31",
+      "goal": 2,
+      "id": "t2_1",
+      "name": "01. 定例参加・議事録整理（継続）",
+      "progress": 0,
+      "start": "2026-05-01",
+      "type": "task"
+    },
+    {
+      "aE": "",
+      "aS": "",
+      "color": "#10b981",
+      "end": "2026-08-31",
+      "goal": 2,
+      "id": "t2_2",
+      "name": "02. プロジェクト全体構造の把握",
+      "progress": 0,
+      "start": "2026-05-01",
+      "type": "task"
+    },
+    {
+      "aE": "",
+      "aS": "",
+      "color": "#10b981",
+      "end": "2026-08-31",
+      "goal": 2,
+      "id": "t2_3",
+      "name": "03. 定例で回答できる実績作り",
+      "progress": 0,
+      "start": "2026-06-01",
+      "type": "task"
+    },
+    {
+      "color": "#8b5cf6",
+      "id": "g3",
+      "name": "目標③ 属人化解消・ドキュメント整備",
+      "type": "phase"
+    },
+    {
+      "aE": "",
+      "aS": "",
+      "color": "#8b5cf6",
+      "end": "2026-05-15",
+      "goal": 3,
+      "id": "t3_1",
+      "name": "01. 属人化業務フロー洗い出し",
+      "progress": 0,
+      "start": "2026-05-01",
+      "type": "task"
+    },
+    {
+      "aE": "",
+      "aS": "",
+      "color": "#8b5cf6",
+      "end": "2026-08-15",
+      "goal": 3,
+      "id": "t3_2",
+      "name": "02. ドキュメント作成（2週に1本）",
+      "progress": 0,
+      "start": "2026-05-15",
+      "type": "task"
+    },
+    {
+      "aE": "",
+      "aS": "",
+      "color": "#8b5cf6",
+      "end": "2026-08-31",
+      "goal": 3,
+      "id": "t3_3",
+      "name": "03. チームメンバーへの展開",
+      "progress": 0,
+      "start": "2026-08-01",
+      "type": "task"
+    }
+  ]
+}
