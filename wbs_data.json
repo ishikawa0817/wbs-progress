@@ -1,5 +1,5 @@
 {
-  "delCnt": 4,
+  "delCnt": 5,
   "deliveries": [
     {
       "date": "2026-04-26",
@@ -14,6 +14,13 @@
       "note": "目標以外_WBS製造記録/20260427_WBS進捗管理ツール構築まとめ.pdf",
       "taskId": "t1_2",
       "title": "WBSをGitHub Actionsを用いて作成（このページ）"
+    },
+    {
+      "date": "2026-04-28",
+      "id": "del_4",
+      "note": "目標②/会議議事録/20260428 1630_【新TES】WISP内部事前確認会.pdf\n-----\nIESの腹持ち日数、CLOAKの取れる情報について学んだ",
+      "taskId": "t2_1",
+      "title": "【新TES】WISP内部事前確認会"
     }
   ],
   "tasks": [
