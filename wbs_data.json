@@ -1,5 +1,5 @@
 {
-  "delCnt": 5,
+  "delCnt": 6,
   "deliveries": [
     {
       "date": "2026-04-26",
@@ -21,6 +21,13 @@
       "note": "目標②/会議議事録/20260428 1630_【新TES】WISP内部事前確認会.pdf\n-----\nIESの腹持ち日数、CLOAKの取れる情報について学んだ",
       "taskId": "t2_1",
       "title": "【新TES】WISP内部事前確認会"
+    },
+    {
+      "date": "2026-04-29",
+      "id": "del_5",
+      "note": "目標①/20260429_WireMockによるAPIモック環境構築まとめ.pdf\n-----\n既存の application-pt.properties を書き換えてサーバーを再起動する運用では、テストパターンごとの切り替えコストが高く自動化に向かないと判断し、WireMockを構築",
+      "taskId": "t1_2",
+      "title": "WireMockによるAPIモック環境構築(TC003をお試しで）"
     }
   ],
   "tasks": [
