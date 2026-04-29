@@ -467,7 +467,12 @@ const DOW=['日','月','火','水','木','金','土'];
 // ════════════════════════════════════
 function getViewParams(){
   const isAll = filterM===null;
-  const viewStart = isAll ? new Date(ALL_START) : MONTH_DEFS.find(x=>x.m===filterM).start;
+  let viewStart = isAll ? new Date(ALL_START) : MONTH_DEFS.find(x=>x.m===filterM).start;
+  // isAll(週単位)モードはbuildWeeksと起点を揃えるため月曜に補正
+  if(isAll){
+    const dow=viewStart.getDay();
+    if(dow!==1) viewStart.setDate(viewStart.getDate()-(dow===0?6:dow-1));
+  }
   const viewEnd   = isAll ? new Date(ALL_END)   : MONTH_DEFS.find(x=>x.m===filterM).end;
   const wpx       = isAll ? WEEK_PX : null;
   const rowH      = isAll ? ROW_H_WEEKLY : ROW_H_DAILY;
