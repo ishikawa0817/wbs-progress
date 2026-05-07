@@ -1,5 +1,5 @@
 {
-  "delCnt": 9,
+  "delCnt": 10,
   "deliveries": [
     {
       "date": "2026-04-26",
@@ -49,6 +49,13 @@
       "note": "目標②/20260507 1300_メンテWISP定例.pdf\n----\n契約状況案確定",
       "taskId": "t2_1",
       "title": "メンテWISP定例"
+    },
+    {
+      "date": "2026-05-07",
+      "id": "del_9",
+      "note": "目標②/20260507 1400_【新TES】フィールドWISP定例.pdf",
+      "taskId": "t2_1",
+      "title": "【新TES】フィールドWISP定例"
     }
   ],
   "tasks": [
